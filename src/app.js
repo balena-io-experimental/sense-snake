@@ -5,6 +5,7 @@ const _ = require('lodash');
 // The delay between calling our tick function. This also handles the snake
 // moving so it should not be too quick
 const tickDelayStart = process.env.SNAKE_TICK_DELAY || 400;
+const tickDelayModifier = process.env.SNAKE_TICK_MODIFIER || 10;
 var tickDelay = tickDelayStart;
 
 const snakeColour = [0, 255, 0];
@@ -17,18 +18,14 @@ const snake = {
 	// snakes are mostly green
 	colour: snakeColour,
 	// start in the middle
-	positions: [[4, 4], [4, 3]]
+	positions: [[4, 3], [4, 4]]
 };
 
 // Start by going right
 var nextDirection = 'stop';
+var lastDirection = 'stop';
 var timerHandle;
-
-const randomFoodPos = () => {
-	return [_.random(0, 7), _.random(0, 7)];
-};
-
-var foodPos = randomFoodPos();
+var foodPos;
 
 const clearScreen = () => {
 	pixels = [
@@ -52,6 +49,7 @@ const drawSnake = () => {
 };
 
 const moveHead = (head) => {
+	lastDirection = nextDirection;
 	switch(nextDirection) {
 		case 'up':
 			return [head[0], head[1] - 1];
@@ -63,6 +61,21 @@ const moveHead = (head) => {
 			return [head[0] + 1, head[1]];
 		case 'stop':
 			return head;
+	}
+};
+
+const oppositeDirection = (direction) => {
+	switch(direction) {
+		case 'up':
+			return 'down';
+		case 'down':
+				return 'up';
+		case 'left':
+				return 'right';
+		case 'right':
+				return 'left';
+		case 'stop':
+			return 'stop';
 	}
 };
 
@@ -80,10 +93,10 @@ const displayCross = () => {
 			black, red, black, black, black, black, red, black,
 			black, black, red, black, black, red, black, black,
 			black, black, black, red, red, black, black, black,
+			black, black, black, red, red, black, black, black,
 			black, black, red, black, black, red, black, black,
 			black, red, black, black, black, black, red, black,
 			red, black, black, black, black, black, black, red,
-			black, black, black, black, black, black, black, black,
 	]);
 
 };
@@ -113,6 +126,10 @@ const isIntersecting = (head, body) => {
 	return point !== undefined;
 };
 
+const randomFoodPos = () => {
+	return [_.random(0, 7), _.random(0, 7)];
+};
+
 const setNewFoodPos = () => {
 	foodPos = randomFoodPos();
 
@@ -127,7 +144,7 @@ senseJoystick.getJoystick()
 	joystick.on('press', (val) => {
 		if (val === 'click') {
 			snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
-		} else {
+		} else if (val !== oppositeDirection(lastDirection)) {
 			nextDirection = val;
 		}
 	});
@@ -145,7 +162,7 @@ const tick = () => {
 		let eating = false;
 		if (pointEquals(snake.positions[0], foodPos)) {
 			snake.size += 1;
-			tickDelay -= 10;
+			tickDelay -= tickDelayModifier;
 			clearInterval(timerHandle);
 			timerHandle = setInterval(tick, tickDelay);
 			setNewFoodPos();
@@ -161,7 +178,7 @@ const tick = () => {
 			end = snake.positions.pop();
 		}
 
-		const newHead = moveHead(snake.positions[0]);
+		let newHead = moveHead(snake.positions[0]);
 		snake.positions = [newHead].concat(snake.positions);
 
 
@@ -173,7 +190,12 @@ const tick = () => {
 
 			displayCross();
 
-			setTimeout(restartGame, 3000);
+			setTimeout(() => {
+				clearScreen();
+				senseLeds.showMessage(` ${snake.size - 2} ${snake.size - 2}`, () => {
+					setTimeout(restartGame, 500);
+				});
+			}, 800);
 
 			return;
 		}
@@ -183,5 +205,7 @@ const tick = () => {
 	drawSnake();
 
 };
+
+setNewFoodPos();
 
 timerHandle = setInterval(tick, tickDelay);
