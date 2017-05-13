@@ -8,6 +8,9 @@ const tickDelayStart = process.env.SNAKE_TICK_DELAY || 400;
 const tickDelayModifier = process.env.SNAKE_TICK_MODIFIER || 10;
 var tickDelay = tickDelayStart;
 
+const WIDTH = 8;
+const HEIGHT = 8;
+
 const snakeColour = [0, 255, 0];
 const black = [0, 0, 0];
 const foodColour = [255, 127, 0];
@@ -27,8 +30,10 @@ var lastDirection = 'stop';
 var timerHandle;
 var foodPos;
 
+var pixelBuffer;
+
 const clearScreen = () => {
-	pixels = [
+	pixelBuffer = [
 		black, black, black, black, black, black, black, black,
 		black, black, black, black, black, black, black, black,
 		black, black, black, black, black, black, black, black,
@@ -38,13 +43,26 @@ const clearScreen = () => {
 		black, black, black, black, black, black, black, black,
 		black, black, black, black, black, black, black, black
 	];
-
-	senseLeds.setPixels(pixels);
 };
+
+const positionToIdx = ([ x, y ]) => {
+	if (x < 0 || x >= WIDTH) {
+		throw new Error("x is out of bounds: #{x}");
+	}
+	if (y < 0 || y >= HEIGHT) {
+		throw new Error("y is out of bounds: #{y}");
+	}
+	return x + WIDTH * y;
+}
+
+
+const setPixel = (pos, colour) => {
+	pixelBuffer[positionToIdx(pos)] = colour;
+}
 
 const drawSnake = () => {
 	_.each(snake.positions, (pos) => {
-		senseLeds.setPixel(pos[0], pos[1], snake.colour);
+		setPixel(pos, snake.colour);
 	});
 };
 
@@ -80,8 +98,8 @@ const oppositeDirection = (direction) => {
 };
 
 const offScreen = (pos) => {
-	if (pos[0] < 0 || pos[0] >= 8) return true;
-	if (pos[1] < 0 || pos[1] >= 8) return true;
+	if (pos[0] < 0 || pos[0] >= WIDTH) return true;
+	if (pos[1] < 0 || pos[1] >= HEIGHT) return true;
 	return false;
 };
 
@@ -115,7 +133,7 @@ const pointEquals = (a, b) => {
 };
 
 const drawFood = (pos) => {
-	senseLeds.setPixel(pos[0], pos[1], foodColour);
+	setPixel(pos, foodColour);
 };
 
 const isIntersecting = (head, body) => {
@@ -203,7 +221,7 @@ const tick = () => {
 
 	drawFood(foodPos);
 	drawSnake();
-
+	senseLeds.setPixels(pixelBuffer);
 };
 
 setNewFoodPos();
