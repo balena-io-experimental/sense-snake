@@ -24,9 +24,8 @@ const snake = {
 	positions: [[4, 3], [4, 4]]
 };
 
-// Start by going right
-var nextDirection = 'stop';
-var lastDirection = 'stop';
+var nextDirection;
+var lastDirection;
 var timerHandle;
 var foodPos;
 
@@ -119,14 +118,6 @@ const displayCross = () => {
 
 };
 
-const restartGame = () => {
-	snake.size = 2;
-	snake.positions = [[4, 4], [4, 5]];
-	nextDirection = 'stop';
-	tickDelay = tickDelayStart;
-
-	timerHandle = setInterval(tick, tickDelay);
-};
 
 const pointEquals = (a, b) => {
 	return a[0] == b[0] && a[1] == b[1];
@@ -224,6 +215,15 @@ const tick = () => {
 	senseLeds.setPixels(pixelBuffer);
 };
 
-setNewFoodPos();
+const restartGame = () => {
+	snake.size = 2;
+	snake.positions = [[4, 4], [4, 5]];
+	nextDirection = [];
+	lastDirection = 'stop';
+	tickDelay = tickDelayStart;
+	setNewFoodPos();
 
-timerHandle = setInterval(tick, tickDelay);
+	timerHandle = setInterval(tick, tickDelay);
+};
+
+restartGame();
