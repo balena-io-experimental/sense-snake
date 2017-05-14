@@ -10,4 +10,6 @@ RUN JOBS=MAX npm install --unsafe-perm --production && npm cache clean
 
 COPY . ./
 
+RUN node --check src/app.js
+
 CMD node src/app.js
