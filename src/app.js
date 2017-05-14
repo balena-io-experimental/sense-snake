@@ -235,28 +235,19 @@ const tick = () => {
 	drawMaze();
 
 	if ((nextDirection[0] || lastDirection) !== 'stop') {
-		let eating = false;
-		if (pointEquals(snake.positions[0], foodPos)) {
+		let newHead = moveHead(snake.positions[0]);
+		snake.positions = [newHead].concat(snake.positions);
+
+		if (pointEquals(newHead, foodPos)) {
 			snake.size += 1;
 			tickDelay -= tickDelayModifier;
 			clearInterval(timerHandle);
 			timerHandle = setInterval(tick, tickDelay);
 			setNewFoodPos();
-			eating = true;
-		}
-
-		// Pop the last element, the tail, and insert another at the start
-		// which uses the correct direction
-		let end;
-		if (eating) {
-			end = snake.positions[snake.positions.length - 1];
 		} else {
-			end = snake.positions.pop();
+			// If we're not eating
+			snake.positions.pop();
 		}
-
-		let newHead = moveHead(snake.positions[0]);
-		snake.positions = [newHead].concat(snake.positions);
-
 
 		// Check that the snake hasn't went off the end of the screen
 		if (offScreen(newHead) || isIntersecting(newHead, snake.positions.slice(1))) {
