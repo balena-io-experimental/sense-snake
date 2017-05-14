@@ -210,9 +210,14 @@ senseJoystick.getJoystick()
 				restartGame();
 			}
 			else {
+				clearInterval(timerHandle);
+				timerHandle = null;
 				snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
 			}
 		} else {
+			if (timerHandle == null) {
+				timerHandle = setInterval(tick, tickDelay);
+			}
 			let currentDir = _.last(nextDirection) || lastDirection;
 			if (val !== currentDir && val !== oppositeDirection(currentDir)) {
 				nextDirection.push(val);
