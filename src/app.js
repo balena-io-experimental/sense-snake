@@ -30,7 +30,6 @@ const snake = {
 
 var nextDirection;
 var lastDirection;
-var timerHandle;
 var foodPos;
 var currentMaze = 0;
 
@@ -101,10 +100,10 @@ const clearScreen = () => {
 
 const positionToIdx = ([ x, y ]) => {
 	if (x < 0 || x >= WIDTH) {
-		throw new Error("x is out of bounds: #{x}");
+		throw new Error(`x is out of bounds: ${x}`);
 	}
 	if (y < 0 || y >= HEIGHT) {
-		throw new Error("y is out of bounds: #{y}");
+		throw new Error(`y is out of bounds: ${y}`);
 	}
 	return x + WIDTH * y;
 };
@@ -210,14 +209,11 @@ senseJoystick.getJoystick()
 				restartGame();
 			}
 			else {
-				clearInterval(timerHandle);
-				timerHandle = null;
+				pauseGame();
 				snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
 			}
 		} else {
-			if (timerHandle == null) {
-				timerHandle = setInterval(tick, tickDelay);
-			}
+			unpauseGame()
 			let currentDir = _.last(nextDirection) || lastDirection;
 			if (val !== currentDir && val !== oppositeDirection(currentDir)) {
 				nextDirection.push(val);
@@ -241,8 +237,7 @@ const tick = () => {
 		if (pointEquals(newHead, foodPos)) {
 			snake.size += 1;
 			tickDelay -= tickDelayModifier;
-			clearInterval(timerHandle);
-			timerHandle = setInterval(tick, tickDelay);
+			startGameLoop()
 			setNewFoodPos();
 		} else {
 			// If we're not eating
@@ -253,7 +248,7 @@ const tick = () => {
 		if (offScreen(newHead) || isIntersecting(newHead, snake.positions.slice(1))) {
 			// Set the snake back to it's starting position, display a
 			// cross and then set a timer to restart the game
-			clearInterval(timerHandle);
+			stopGameLoop();
 
 			displayCross();
 
@@ -281,8 +276,32 @@ const restartGame = () => {
 	tickDelay = tickDelayStart;
 	setNewFoodPos();
 
+	startGameLoop();
+};
+
+let timerHandle;
+const STOPPED = 0;
+const PAUSED = 1;
+const RUNNING = 2;
+let state = STOPPED;
+const pauseGame = () => {
+	if (state === STOPPED) return;
+	state = PAUSED;
+	clearInterval(timerHandle);
+}
+const unpauseGame = () => {
+	if (state === PAUSED) {
+		startGameLoop();
+	}
+}
+const startGameLoop = () => {
 	clearInterval(timerHandle);
 	timerHandle = setInterval(tick, tickDelay);
-};
+	state = RUNNING;
+}
+const stopGameLoop = () => {
+	state = STOPPED;
+	clearInterval(timerHandle);
+}
 
 restartGame();
