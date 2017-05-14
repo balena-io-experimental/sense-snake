@@ -14,6 +14,7 @@ const HEIGHT = 8;
 const snakeColour = [0, 255, 0];
 const black = [0, 0, 0];
 const foodColour = [255, 127, 0];
+const headColour = [137, 172, 163];
 
 const snake = {
 	// Our snake starts small
@@ -52,15 +53,16 @@ const positionToIdx = ([ x, y ]) => {
 		throw new Error("y is out of bounds: #{y}");
 	}
 	return x + WIDTH * y;
-}
+};
 
 
 const setPixel = (pos, colour) => {
 	pixelBuffer[positionToIdx(pos)] = colour;
-}
+};
 
 const drawSnake = () => {
-	_.each(snake.positions, (pos) => {
+	setPixel(snake.positions[0], headColour);
+	_.each(snake.positions.slice(1), (pos) => {
 		setPixel(pos, snake.colour);
 	});
 };
