@@ -66,8 +66,8 @@ const drawSnake = () => {
 };
 
 const moveHead = (head) => {
-	lastDirection = nextDirection;
-	switch(nextDirection) {
+	lastDirection = nextDirection.shift() || lastDirection;
+	switch(lastDirection) {
 		case 'up':
 			return [head[0], head[1] - 1];
 		case 'down':
@@ -153,8 +153,11 @@ senseJoystick.getJoystick()
 	joystick.on('press', (val) => {
 		if (val === 'click') {
 			snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
-		} else if (val !== oppositeDirection(lastDirection)) {
-			nextDirection = val;
+		} else {
+			let currentDir = _.last(nextDirection) || lastDirection;
+			if (val !== currentDir && val !== oppositeDirection(currentDir)) {
+				nextDirection.push(val);
+			}
 		}
 	});
 });
@@ -167,7 +170,7 @@ const tick = () => {
 	// first clear the screen
 	clearScreen();
 
-	if (nextDirection !== 'stop') {
+	if ((nextDirection[0] || lastDirection) !== 'stop') {
 		let eating = false;
 		if (pointEquals(snake.positions[0], foodPos)) {
 			snake.size += 1;
