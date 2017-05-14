@@ -1,6 +1,7 @@
 const senseJoystick = require('sense-joystick');
 const senseLeds = require('sense-hat-led');
 const _ = require('lodash');
+const lodash = _;
 
 // The delay between calling our tick function. This also handles the snake
 // moving so it should not be too quick
@@ -12,9 +13,11 @@ const WIDTH = 8;
 const HEIGHT = 8;
 
 const snakeColour = [0, 255, 0];
-const black = [0, 0, 0];
-const foodColour = [255, 127, 0];
 const headColour = [137, 172, 163];
+const black = [0, 0, 0];
+const red = [255, 0, 0];
+const foodColour = [255, 127, 0];
+const mazeColour = [255, 0, 0];
 
 const snake = {
 	// Our snake starts small
@@ -29,20 +32,71 @@ var nextDirection;
 var lastDirection;
 var timerHandle;
 var foodPos;
+var currentMaze = 0;
 
 var pixelBuffer;
 
-const clearScreen = () => {
-	pixelBuffer = [
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black,
-		black, black, black, black, black, black, black, black
+const { mazes, mazePoints, cross } = (() => {
+	const _ = black;
+	const X = red;
+	const mazes = {
+		none: [
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _
+		],
+		corner: [
+			_, _, _, _, _, _, _, _,
+			_, X, X, _, _, X, X, _,
+			_, X, _, _, _, _, X, _,
+			_, _, _, _, _, _, _, _,
+			_, _, _, _, _, _, _, _,
+			_, X, _, _, _, _, X, _,
+			_, X, X, _, _, X, X, _,
+			_, _, _, _, _, _, _, _
+		],
+		thing: [
+			_, _, _, _, _, _, _, _,
+			_, X, _, _, _, _, X, _,
+			_, _, X, _, _, X, _, _,
+			_, _, X, _, _, X, _, _,
+			_, _, X, _, _, X, _, _,
+			_, _, X, _, _, X, _, _,
+			_, X, _, _, _, _, X, _,
+			_, _, _, _, _, _, _, _
+		]
+	};
+
+	const mazePoints = lodash.map(mazes, (maze) => {
+		return lodash.flatMap(maze, (pixel, pos) => {
+			if(pixel === X) {
+				return [[ pos % WIDTH, Math.floor(pos / WIDTH) ]];
+			}
+			return [];
+		});
+	});
+	const cross = [
+		X, _, _, _, _, _, _, X,
+		_, X, _, _, _, _, X, _,
+		_, _, X, _, _, X, _, _,
+		_, _, _, X, X, _, _, _,
+		_, _, _, X, X, _, _, _,
+		_, _, X, _, _, X, _, _,
+		_, X, _, _, _, _, X, _,
+		X, _, _, _, _, _, _, X
 	];
+
+	return { mazes, mazePoints, cross }
+})();
+const mazeOptions = _.keys(mazes);
+
+const clearScreen = () => {
+	pixelBuffer = _.clone(mazes.none);
 };
 
 const positionToIdx = ([ x, y ]) => {
@@ -105,19 +159,7 @@ const offScreen = (pos) => {
 };
 
 const displayCross = () => {
-	const red = [255, 0, 0];
-
-	senseLeds.setPixels([
-			red, black, black, black, black, black, black, red,
-			black, red, black, black, black, black, red, black,
-			black, black, red, black, black, red, black, black,
-			black, black, black, red, red, black, black, black,
-			black, black, black, red, red, black, black, black,
-			black, black, red, black, black, red, black, black,
-			black, red, black, black, black, black, red, black,
-			red, black, black, black, black, black, black, red,
-	]);
-
+	senseLeds.setPixels(cross);
 };
 
 
@@ -129,12 +171,21 @@ const drawFood = (pos) => {
 	setPixel(pos, foodColour);
 };
 
-const isIntersecting = (head, body) => {
-	const point = _.find(body, (cell) => {
-		return pointEquals(head, cell);
-	});
+const drawMaze = () => {
+	pixelBuffer = _.clone(mazes[mazeOptions[currentMaze]]);
+};
 
-	return point !== undefined;
+const isIntersecting = (head, body) => {
+	const checkCell = (cell) => {
+		return pointEquals(head, cell);
+	};
+	// Check if the body intersects
+	if (_.some(body, checkCell)) return true;
+
+	// Check if the maze intersects
+	if (_.some(mazePoints[currentMaze], checkCell)) return true;
+
+	return false;
 };
 
 const randomFoodPos = () => {
@@ -154,7 +205,13 @@ senseJoystick.getJoystick()
 .then((joystick) => {
 	joystick.on('press', (val) => {
 		if (val === 'click') {
-			snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
+			if (lastDirection === 'stop') {
+				currentMaze = (currentMaze + 1) % mazeOptions.length;
+				restartGame();
+			}
+			else {
+				snake.colour = [_.random(40, 255), _.random(40, 255), _.random(40, 255)];
+			}
 		} else {
 			let currentDir = _.last(nextDirection) || lastDirection;
 			if (val !== currentDir && val !== oppositeDirection(currentDir)) {
@@ -169,8 +226,8 @@ senseJoystick.getJoystick()
 // the screen.
 const tick = () => {
 
-	// first clear the screen
-	clearScreen();
+	// first draw the maze
+	drawMaze();
 
 	if ((nextDirection[0] || lastDirection) !== 'stop') {
 		let eating = false;
@@ -228,6 +285,7 @@ const restartGame = () => {
 	tickDelay = tickDelayStart;
 	setNewFoodPos();
 
+	clearInterval(timerHandle);
 	timerHandle = setInterval(tick, tickDelay);
 };
 
