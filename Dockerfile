@@ -1,4 +1,4 @@
-FROM resin/%%RESIN_MACHINE_NAME%%-node
+FROM resin/raspberrypi3-node:8.5
 
 ENV INITSYSTEM on
 
