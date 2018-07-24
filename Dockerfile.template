@@ -1,13 +1,17 @@
-FROM resin/%%RESIN_MACHINE_NAME%%-node:8.5.0
-
-ENV INITSYSTEM on
+FROM resin/%%RESIN_MACHINE_NAME%%-node:8.5.0 AS base
 
 WORKDIR /usr/src/app
 
 COPY package.json .
-
 RUN JOBS=MAX npm install --unsafe-perm --production
 
+
+FROM resin/%%RESIN_MACHINE_NAME%%-node:8.5.0-slim
+
+ENV INITSYSTEM on
+
+WORKDIR /usr/src/app
+COPY --from=base /usr/src/app/node_modules ./node_modules
 COPY . ./
 
 RUN node --check src/app.js
