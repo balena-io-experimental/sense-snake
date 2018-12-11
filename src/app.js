@@ -12,8 +12,10 @@ var tickDelay = tickDelayStart;
 const WIDTH = 8;
 const HEIGHT = 8;
 
-const snakeColour = [0, 255, 0];
-const headColour = [137, 172, 163];
+// const snakeColour = [0, 255, 0];
+const snakeColour = [0, 255, 255];
+//const headColour = [137, 172, 163];
+const headColour = [0, 172, 163];
 const black = [0, 0, 0];
 const red = [255, 0, 0];
 const foodColour = [255, 127, 0];
