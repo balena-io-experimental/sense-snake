@@ -1,6 +1,6 @@
 # SenseSnake
 
-Snake for the raspberrypi sense-hat on resin!
+Snake for the raspberrypi sense-hat on balena!
 
 ## Configuration
 
