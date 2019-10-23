@@ -1,0 +1,19 @@
+FROM balenalib/raspberrypi3-node:8-build AS base
+
+WORKDIR /usr/src/app
+
+COPY package.json .
+RUN JOBS=MAX npm install --unsafe-perm --production
+
+
+FROM balenalib/raspberrypi3-node:8
+
+ENV INITSYSTEM on
+
+WORKDIR /usr/src/app
+COPY --from=base /usr/src/app/node_modules ./node_modules
+COPY . ./
+
+RUN node --check src/app.js
+
+CMD node src/app.js
